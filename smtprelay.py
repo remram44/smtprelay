@@ -100,7 +100,7 @@ class MailHandler():
             logger.info(
                 'Sending message to: %s',
                 '; '.join(
-                    server['host'] + ':'
+                    server['host'] + ': '
                     + ', '.join(addresses)
                     for server, addresses in mail_per_server.values()
                 ),
