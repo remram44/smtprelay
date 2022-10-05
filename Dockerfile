@@ -23,5 +23,13 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 COPY smtprelay.py ./
 
+# Set up user
+RUN mkdir -p /usr/src/app/home && \
+    useradd -d /usr/src/app/home -s /usr/sbin/nologin -u 998 appuser && \
+    chown appuser /usr/src/app/home
+
+ENV PYTHONFAULTHANDLER=1
+
+USER 998
 EXPOSE 2525
 CMD ["python3", "smtprelay.py"]
