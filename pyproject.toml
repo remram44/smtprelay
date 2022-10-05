@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "nyusmtprelay"
+name = "smtprelay"
 version = "0.1.0"
-description = "An SMTP relay to send email in NYU. Avoids the security warning"
+description = "An SMTP relay to send email through multiple servers depending on address"
 authors = ["Remi Rampin <remi@rampin.org>"]
 license = "MIT"
 readme = "README.md"

@@ -1,4 +1,4 @@
-# NYU SMTP Relay
+# SMTP Relay
 
 This is a little SMTP server that can be used to send email in NYU, without triggering the "Failed NYU Email Security check" warning.
 
@@ -39,5 +39,5 @@ OUTBOUND_2_SSL="yes" \
 OUTBOUND_2_STARTTLS="no" \
 OUTBOUND_2_USER="apikey" \
 OUTBOUND_2_PASSWORD="SG.Your.SendGrid.Api.Key.Here" \
-python3 nyusmtprelay.py
+python3 smtprelay.py
 ```

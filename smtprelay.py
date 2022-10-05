@@ -12,7 +12,7 @@ import sys
 __version__ = '0.1.0'
 
 
-logger = logging.getLogger('nyusmtprelay')
+logger = logging.getLogger('smtprelay')
 
 
 # Read servers from environment
