@@ -56,25 +56,6 @@ def find_server(destination):
     return None
 
 
-def send_mail_sync(server, addresses, envelope):
-    with contextlib.ExitStack() as stack:
-        if server['ssl']:
-            client = stack.enter_context(smtplib.SMTP_SSL(
-                server['host'],
-                server['port'],
-            ))
-        else:
-            client = stack.enter_context(smtplib.SMTP(
-                server['host'],
-                server['port'],
-            ))
-        if server['starttls']:
-            client.starttls()
-        if server['user'] or server['password']:
-            client.login(server['user'], server['password'])
-        client.send_message(envelope.content, envelope.mail_from, addresses)
-
-
 async def send_mail(server, addresses, envelope):
     await aiosmtplib.send(
         envelope.content,
