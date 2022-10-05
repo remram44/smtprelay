@@ -1,5 +1,6 @@
 import aiosmtplib
 from aiosmtpd.controller import Controller
+from aiosmtpd.smtp import AuthResult, LoginPassword
 import asyncio
 import logging
 import os
@@ -52,6 +53,18 @@ def find_server(destination):
         if server['destination_regex'].match(destination):
             return server
     return None
+
+
+AUTH_USER = os.environ.get('AUTH_USER')
+if AUTH_USER:
+    AUTH_USER = AUTH_USER.encode('utf-8')
+else:
+    AUTH_USER = None
+AUTH_PASSWORD = os.environ.get('AUTH_PASSWORD')
+if AUTH_PASSWORD:
+    AUTH_PASSWORD = AUTH_PASSWORD.encode('utf-8')
+else:
+    AUTH_PASSWORD = None
 
 
 async def send_mail(server, addresses, envelope):
@@ -113,6 +126,17 @@ class MailHandler():
         return '250 Message accepted for delivery'
 
 
+def authenticator(server, session, envelope, mechanism, auth_data):
+    reject = AuthResult(success=False, handled=False)
+    if mechanism not in ('LOGIN', 'PLAIN'):
+        return reject
+    if not isinstance(auth_data, LoginPassword):
+        return reject
+    if auth_data.login != AUTH_USER or auth_data.password != AUTH_PASSWORD:
+        return reject
+    return AuthResult(success=True)
+
+
 def main():
     # Don't accept any arguments
     assert len(sys.argv) == 1
@@ -122,7 +146,13 @@ def main():
     port = 2525
     loop = asyncio.new_event_loop()
     logger.info('Listening on port %d', port)
-    controller = Controller(MailHandler(), hostname='0.0.0.0', port=port)
+    controller = Controller(
+        MailHandler(),
+        hostname='0.0.0.0',
+        port=port,
+        authenticator=authenticator if AUTH_USER or AUTH_PASSWORD else None,
+        auth_require_tls=False,
+    )
     controller.start()
     loop.run_forever()
 
