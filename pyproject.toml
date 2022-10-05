@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "nyusmtprelay"
+version = "0.1.0"
+description = "An SMTP relay to send email in NYU. Avoids the security warning"
+authors = ["Remi Rampin <remi@rampin.org>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+aiosmtpd = ">=1.4.2,<2"
+aiosmtplib = ">=1.1.7,<2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
