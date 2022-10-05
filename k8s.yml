@@ -26,6 +26,13 @@ spec:
           image: ghcr.io/remram44/smtprelay:v0.2
           imagePullPolicy: IfNotPresent
           env:
+            - name: AUTH_USER
+              value: smtpuser
+            - name: AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: smtprelay
+                  key: password
             - name: OUTBOUND_1_DESTINATION_REGEX
               value: ".*@nyu\\.edu"
             - name: OUTBOUND_1_HOST
