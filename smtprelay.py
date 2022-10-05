@@ -1,11 +1,9 @@
 import aiosmtplib
 from aiosmtpd.controller import Controller
 import asyncio
-import contextlib
 import logging
 import os
 import re
-import smtplib
 import sys
 
 
