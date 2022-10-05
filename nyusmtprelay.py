@@ -2,6 +2,7 @@ import aiosmtplib
 from aiosmtpd.controller import Controller
 import asyncio
 import contextlib
+import logging
 import os
 import re
 import smtplib
@@ -9,6 +10,9 @@ import sys
 
 
 __version__ = '0.1.0'
+
+
+logger = logging.getLogger('nyusmtprelay')
 
 
 # Read servers from environment
@@ -37,6 +41,9 @@ def read_servers():
         })
 
         i += 1
+
+    logger.info('Loaded %d servers', len(servers))
+
     return servers
 
 servers = read_servers()
@@ -92,6 +99,7 @@ class MailHandler():
         rcpt_options,
     ):
         if find_server(address) is None:
+            logger.info('Refusing to send to %r', address)
             return '550 not relaying to that domain'
         envelope.rcpt_tos.append(address)
         return '250 OK'
@@ -108,6 +116,17 @@ class MailHandler():
                 mail_per_server[id(server)] = server, addresses
             addresses.append(address)
 
+        # Log
+        if logger.isEnabledFor(logging.INFO):
+            logger.info(
+                'Sending message to: %s',
+                '; '.join(
+                    server['host'] + ':'
+                    + ', '.join(addresses)
+                    for server, addresses in mail_per_server.values()
+                ),
+            )
+
         # Send
         for server, addresses in mail_per_server.values():
             await send_mail(server, addresses, envelope)
@@ -119,8 +138,11 @@ def main():
     # Don't accept any arguments
     assert len(sys.argv) == 1
 
+    logging.basicConfig(level=logging.INFO)
+
     port = 2525
     loop = asyncio.new_event_loop()
+    logger.info('Listening on port %d', port)
     controller = Controller(MailHandler(), hostname='0.0.0.0', port=port)
     controller.start()
     loop.run_forever()
