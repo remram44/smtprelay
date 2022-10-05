@@ -1,0 +1,77 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: smtprelay
+  name: smtprelay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smtprelay
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: "50%"
+  template:
+    metadata:
+      labels:
+        app: smtprelay
+    spec:
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: smtprelay
+          image: ghcr.io/remram44/smtprelay:v0.2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: OUTBOUND_1_DESTINATION_REGEX
+              value: ".*@nyu\\.edu"
+            - name: OUTBOUND_1_HOST
+              value: "67.231.153.242"
+            - name: OUTBOUND_1_PORT
+              value: "25"
+            - name: OUTBOUND_1_SSL
+              value: "no"
+            - name: OUTBOUND_1_STARTTLS
+              value: "no"
+            - name: OUTBOUND_2_DESTINATION_REGEX
+              value: ".*"
+            - name: OUTBOUND_2_HOST
+              value: "smtp.sendgrid.net"
+            - name: OUTBOUND_2_PORT
+              value: "465"
+            - name: OUTBOUND_2_SSL
+              value: "yes"
+            - name: OUTBOUND_2_STARTTLS
+              value: "no"
+            - name: OUTBOUND_2_USER
+              value: "apikey"
+            - name: OUTBOUND_2_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sendgrid
+                  key: password
+          ports:
+            - containerPort: 2525
+              name: smtp
+              protocol: TCP
+          securityContext:
+            runAsNonRoot: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: smtprelay
+  name: smtprelay
+spec:
+  type: ClusterIP
+  selector:
+    app: smtprelay
+  ports:
+    - name: smtp
+      protocol: TCP
+      port: 25
+      targetPort: smtp
