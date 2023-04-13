@@ -81,7 +81,7 @@ async def send_mail(server, addresses, envelope):
     )
 
 
-class MailHandler():
+class ReceiveMailHandler():
     async def handle_RCPT(
         self,
         server,
@@ -149,7 +149,7 @@ def main():
     loop = asyncio.new_event_loop()
     logger.info('Listening on port %d', port)
     controller = Controller(
-        MailHandler(),
+        ReceiveMailHandler(),
         hostname='0.0.0.0',
         port=port,
         authenticator=authenticator if AUTH_USER or AUTH_PASSWORD else None,
