@@ -53,7 +53,9 @@ PROM_RECV_EMAIL_RECIPIENTS = prometheus_client.Histogram(
 
 
 # Read servers from environment
+servers = None
 def read_servers():
+    global servers
     servers = []
     i = 1
     while f'OUTBOUND_{i}_HOST' in os.environ:
@@ -91,8 +93,6 @@ def read_servers():
         PROM_RECV_AUTH_ERROR.labels(error.value).inc(0)
 
     return servers
-
-servers = read_servers()
 
 
 def find_server(destination):
@@ -204,6 +204,11 @@ def main():
     assert len(sys.argv) == 1
 
     logging.basicConfig(level=logging.INFO)
+
+    read_servers()
+    if not servers:
+        logger.critical("No server configured")
+        sys.exit(1)
 
     prometheus_client.start_http_server(8000)
 
