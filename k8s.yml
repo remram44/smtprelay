@@ -23,7 +23,7 @@ spec:
       terminationGracePeriodSeconds: 5
       containers:
         - name: smtprelay
-          image: ghcr.io/remram44/smtprelay:v0.3.1
+          image: ghcr.io/remram44/smtprelay:v0.4
           imagePullPolicy: IfNotPresent
           env:
             - name: AUTH_USER
