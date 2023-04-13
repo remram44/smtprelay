@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "smtprelay"
-version = "0.3.0"
+version = "0.3.1"
 description = "An SMTP relay to send email through multiple servers depending on address"
 authors = ["Remi Rampin <remi@rampin.org>"]
 license = "MIT"
