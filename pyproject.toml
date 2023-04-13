@@ -10,6 +10,7 @@ readme = "README.md"
 python = "^3.8"
 aiosmtpd = ">=1.4.2,<2"
 aiosmtplib = ">=1.1.7,<2"
+prometheus-client = "*"
 
 [build-system]
 requires = ["poetry-core"]

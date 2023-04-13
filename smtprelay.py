@@ -2,8 +2,10 @@ import aiosmtplib
 from aiosmtpd.controller import Controller
 from aiosmtpd.smtp import AuthResult, LoginPassword
 import asyncio
+import enum
 import logging
 import os
+import prometheus_client
 import re
 import sys
 
@@ -12,6 +14,42 @@ __version__ = '0.3.1'
 
 
 logger = logging.getLogger('smtprelay')
+
+
+class AuthErrors(enum.Enum):
+    MECHANISM = 'mechanism'
+    CREDENTIALS = 'credentials'
+    OTHER = 'other'
+
+
+PROM_MAIL_SENT = prometheus_client.Counter(
+    'email_send_count',
+    "Emails sent per destination server",
+    ['server'],
+)
+
+PROM_SEND_ERRORS = prometheus_client.Counter(
+    'email_send_error_count',
+    "Emails send errors per destination server",
+    ['server'],
+)
+
+PROM_RECV_AUTH_ERROR = prometheus_client.Counter(
+    'email_recv_auth_error_count',
+    "Inbound connections that failed auth",
+    ['error'],
+)
+
+PROM_RECV_EMAIL = prometheus_client.Counter(
+    'email_recv_individual_count',
+    "Number of emails received (before duplication for recipients)",
+)
+
+PROM_RECV_EMAIL_RECIPIENTS = prometheus_client.Histogram(
+    'email_recv_recipients',
+    "Number of recipients on received emails",
+    buckets=[1, 2, 3, 4, 5, 8, 10, 12, 15, 20],
+)
 
 
 # Read servers from environment
@@ -42,6 +80,15 @@ def read_servers():
         i += 1
 
     logger.info('Loaded %d servers', len(servers))
+
+    # Initialize Prometheus metrics
+    for server in servers:
+        key = '%s:%d' % (server['host'], server['port'])
+        PROM_MAIL_SENT.labels(key).inc(0)
+        PROM_SEND_ERRORS.labels(key).inc(0)
+        PROM_RECV_EMAIL.inc(0)
+    for error in AuthErrors:
+        PROM_RECV_AUTH_ERROR.labels(error.value).inc(0)
 
     return servers
 
@@ -121,9 +168,19 @@ class ReceiveMailHandler():
                 ),
             )
 
+        PROM_RECV_EMAIL.inc()
+        PROM_RECV_EMAIL_RECIPIENTS.observe(len(envelope.rcpt_tos))
+
         # Send
         for server, addresses in mail_per_server.values():
-            await send_mail(server, addresses, envelope)
+            key = '%s:%d' % (server['host'], server['port'])
+            try:
+                await send_mail(server, addresses, envelope)
+            except Exception:
+                PROM_SEND_ERRORS.labels(key).inc()
+                raise
+            PROM_MAIL_SENT.labels(key).inc(len(addresses))
+
 
         return '250 Message accepted for delivery'
 
@@ -131,10 +188,13 @@ class ReceiveMailHandler():
 def authenticator(server, session, envelope, mechanism, auth_data):
     reject = AuthResult(success=False, handled=False)
     if mechanism not in ('LOGIN', 'PLAIN'):
+        PROM_RECV_AUTH_ERROR.labels(AuthErrors.MECHANISM.value).inc()
         return reject
     if not isinstance(auth_data, LoginPassword):
+        PROM_RECV_AUTH_ERROR.labels(AuthErrors.OTHER.value).inc()
         return reject
     if auth_data.login != AUTH_USER or auth_data.password != AUTH_PASSWORD:
+        PROM_RECV_AUTH_ERROR.labels(AuthErrors.CREDENTIALS.value).inc()
         return reject
     return AuthResult(success=True)
 
@@ -144,6 +204,8 @@ def main():
     assert len(sys.argv) == 1
 
     logging.basicConfig(level=logging.INFO)
+
+    prometheus_client.start_http_server(8000)
 
     port = 2525
     loop = asyncio.new_event_loop()
