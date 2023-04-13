@@ -64,6 +64,9 @@ spec:
             - containerPort: 2525
               name: smtp
               protocol: TCP
+            - containerPort: 8000
+              name: metrics
+              protocol: TCP
           securityContext:
             runAsNonRoot: true
 ---
