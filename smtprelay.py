@@ -90,6 +90,8 @@ class MailHandler():
         address,
         rcpt_options,
     ):
+        if (AUTH_USER or AUTH_PASSWORD) and not session.authenticated:
+            return '550 not authenticated'
         if find_server(address) is None:
             logger.info('Refusing to send to %r', address)
             return '550 not relaying to that domain'
